@@ -1,4 +1,5 @@
 package com.kvn.jobopportunityapp.ui.screens
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -141,7 +142,7 @@ fun CVScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Atrás",
                             modifier = Modifier.size(24.dp),
                             tint = Primary
@@ -553,7 +554,7 @@ fun AddExperienceDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Atrás",
                         modifier = Modifier.size(20.dp),
                         tint = Primary
@@ -646,7 +647,7 @@ fun AddEducationDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Atrás",
                         modifier = Modifier.size(20.dp),
                         tint = Primary
@@ -737,7 +738,7 @@ fun AddSkillDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Atrás",
                         modifier = Modifier.size(20.dp),
                         tint = Primary

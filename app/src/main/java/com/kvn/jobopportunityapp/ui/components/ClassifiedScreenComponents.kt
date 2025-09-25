@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import com.kvn.jobopportunityapp.ui.screens.ServiceItem
 import com.kvn.jobopportunityapp.ui.screens.ProductItem
@@ -68,7 +69,7 @@ fun ServicesGrid() {
         val services = listOf(
             ServiceItem(title = "Desarrollo Web", icon = Icons.Default.Code, price = "$400.000-1.200.000"),
             ServiceItem(title = "Diseño Gráfico", icon = Icons.Default.Brush, price = "$150.000-600.000"),
-            ServiceItem(title = "Marketing Digital", icon = Icons.Default.TrendingUp, price = "$250.000-800.000"),
+            ServiceItem(title = "Marketing Digital", icon = Icons.AutoMirrored.Filled.TrendingUp, price = "$250.000-800.000"),
             ServiceItem(title = "Traducción", icon = Icons.Default.Translate, price = "$50/palabra"),
             ServiceItem(title = "Fotografía", icon = Icons.Default.CameraAlt, price = "$120.000-400.000"),
             ServiceItem(title = "Consultoría", icon = Icons.Default.Business, price = "$40.000-120.000/hr"),

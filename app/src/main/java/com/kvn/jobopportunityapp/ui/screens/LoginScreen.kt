@@ -36,54 +36,23 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.kvn.jobopportunityapp.data.UserType
 import com.kvn.jobopportunityapp.ui.theme.*
+import androidx.compose.ui.platform.LocalContext
+import com.kvn.jobopportunityapp.data.AppPreferences
+import com.kvn.jobopportunityapp.ui.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: (UserType, String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
+    val context = LocalContext.current
+    val prefs = remember { AppPreferences(context) }
+    val viewModel = remember { AuthViewModel(prefs) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
-    // Función de login con datos quemados
-    fun attemptLogin() {
-        isLoading = true
-        showError = false
-
-        // Simular delay de red usando el scope recordado (no crear scopes ad-hoc)
-        coroutineScope.launch {
-            delay(1000)
-
-            // Datos quemados para login
-            when {
-                // Usuario cesante
-                (email == "cesante@test.com" || email == "usuario@test.com" || email.isNotBlank()) &&
-                        (password == "123456" || password == "password" || password.isNotBlank()) -> {
-                    onLoginSuccess(UserType.CESANTE, email)
-                }
-                // Usuario empresa  
-                (email == "empresa@test.com" || email == "admin@test.com") &&
-                        (password == "123456" || password == "admin" || password.isNotBlank()) -> {
-                    onLoginSuccess(UserType.EMPRESA, email)
-                }
-                // Permitir cualquier credencial válida
-                email.isNotBlank() && password.isNotBlank() -> {
-                    // Por defecto, iniciar como cesante
-                    onLoginSuccess(UserType.CESANTE, email)
-                }
-                else -> {
-                    showError = true
-                    errorMessage = "Por favor, ingresa email y contraseña"
-                }
-            }
-            isLoading = false
-        }
-    }
+    val uiState = viewModel.uiState.value
+    var localError by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -185,10 +154,7 @@ fun LoginScreen(
                 // Campo de email
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { 
-                        email = it
-                        showError = false
-                    },
+                    onValueChange = { email = it },
                     label = { Text("Correo Electrónico") },
                     placeholder = { Text("ejemplo@correo.com") },
                     leadingIcon = {
@@ -213,10 +179,7 @@ fun LoginScreen(
                 // Campo de contraseña
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { 
-                        password = it
-                        showError = false
-                    },
+                    onValueChange = { password = it },
                     label = { Text("Contraseña") },
                     placeholder = { Text("••••••••") },
                     leadingIcon = {
@@ -250,9 +213,10 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // Mensaje de error
-                if (showError) {
+                val combinedError = uiState.error ?: localError
+                if (combinedError != null) {
                     Text(
-                        text = errorMessage,
+                        text = combinedError,
                         color = Error,
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center
@@ -281,15 +245,24 @@ fun LoginScreen(
                 
                 // Botón de iniciar sesión
                 Button(
-                    onClick = { attemptLogin() },
+                    onClick = {
+                        localError = null
+                        if (email.isBlank() || password.isBlank()) {
+                            localError = "Por favor, ingresa email y contraseña"
+                        } else {
+                            viewModel.login(email.trim(), password, onSuccess = { type, e, _ ->
+                                onLoginSuccess(type, e)
+                            })
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Primary),
                     shape = RoundedCornerShape(14.dp),
-                    enabled = !isLoading
+                    enabled = !uiState.isLoading
                 ) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             color = Color.White,

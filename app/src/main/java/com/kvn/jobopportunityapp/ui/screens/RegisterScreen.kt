@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -31,6 +30,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.kvn.jobopportunityapp.data.UserType
+import androidx.compose.ui.platform.LocalContext
+import com.kvn.jobopportunityapp.data.AppPreferences
+import com.kvn.jobopportunityapp.ui.viewmodel.AuthViewModel
 import com.kvn.jobopportunityapp.ui.theme.*
 
 import androidx.compose.animation.AnimatedVisibility
@@ -58,6 +60,10 @@ fun RegisterScreen(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val prefs = remember { AppPreferences(context) }
+    val viewModel = remember { AuthViewModel(prefs) }
+    val uiState = viewModel.uiState.value
 
     val visible = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible.value = true }
@@ -306,38 +312,37 @@ fun RegisterScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
+                        val combinedError = uiState.error
+                        if (combinedError != null && !showError) {
+                            showError = true
+                            errorMessage = combinedError
+                        }
                         Button(
-                                onClick = {
-                                    isLoading = true
-                                    showError = false
-                                    errorMessage = ""
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        delay(1000)
-                                        if (fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-                                            showError = true
-                                            errorMessage = "Por favor completa todos los campos."
-                                            isLoading = false
-                                            return@launch
-                                        }
-                                        if (password != confirmPassword) {
-                                            showError = true
-                                            errorMessage = "Las contraseñas no coinciden."
-                                            isLoading = false
-                                            return@launch
-                                        }
-                                        // Simular éxito de registro
-                                        onRegisterSuccess(selectedUserType, fullName, email)
-                                        isLoading = false
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(54.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                                shape = RoundedCornerShape(14.dp),
-                                enabled = !isLoading
-                            ) {
-                            if (isLoading) {
+                            onClick = {
+                                showError = false
+                                errorMessage = ""
+                                if (fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                                    showError = true
+                                    errorMessage = "Por favor completa todos los campos."
+                                    return@Button
+                                }
+                                if (password != confirmPassword) {
+                                    showError = true
+                                    errorMessage = "Las contraseñas no coinciden."
+                                    return@Button
+                                }
+                                viewModel.register(fullName, email, password, selectedUserType) { type, name, mail ->
+                                    onRegisterSuccess(type, name, mail)
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            shape = RoundedCornerShape(14.dp),
+                            enabled = !uiState.isLoading
+                        ) {
+                            if (uiState.isLoading) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     color = Color.White,

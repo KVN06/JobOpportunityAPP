@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -61,7 +62,7 @@ fun JobOpportunityBottomBar(
             route = "classified"
         ),
         BottomNavItem(
-            title = "Capacitaciones",
+            title = "Cursos",
             selectedIcon = Icons.Filled.School,
             unselectedIcon = Icons.Outlined.School,
             route = "training"
@@ -87,9 +88,15 @@ fun JobOpportunityBottomBar(
             .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.06f),
+                    shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
+                ),
             color = Color.Transparent,
-            shadowElevation = 8.dp
+            shadowElevation = 10.dp
         ) {
             Box(
                 modifier = Modifier
@@ -228,7 +235,7 @@ fun BottomNavItemComponent(
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 fontSize = 11.sp
             ),
-            color = animatedColor
+            color = animatedColor.copy(alpha = if (isSelected) 1f else 0.85f)
         )
     }
 }

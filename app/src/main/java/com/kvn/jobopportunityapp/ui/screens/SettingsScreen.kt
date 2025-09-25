@@ -8,20 +8,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import com.kvn.jobopportunityapp.ui.components.TopHeader
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,14 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kvn.jobopportunityapp.data.AppPreferences
-
-// Stub colors
-val TextPrimary = Color(0xFF222222)
-val TextSecondary = Color(0xFF888888)
-val Primary = Color(0xFF1976D2)
-val Error = Color(0xFFD32F2F)
-val BorderColor = Color(0xFFE0E0E0)
-val CardBackground = Color(0xFFF5F5F5)
+import com.kvn.jobopportunityapp.ui.theme.*
 
 
 enum class DataUsageOption(val key: String, val displayName: String) {
@@ -55,15 +49,15 @@ fun SettingsScreen(appPreferences: AppPreferences, onBackClick: () -> Unit = {},
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header with gradient to match other screens
-            Box(modifier = Modifier.fillMaxWidth().height(110.dp).background(brush = Brush.linearGradient(listOf(com.kvn.jobopportunityapp.ui.theme.GradientStart, com.kvn.jobopportunityapp.ui.theme.GradientEnd))).statusBarsPadding(), contentAlignment = Alignment.CenterStart) {
+        Box(modifier = Modifier.fillMaxWidth().height(110.dp).background(brush = Brush.linearGradient(listOf(com.kvn.jobopportunityapp.ui.theme.GradientStart, com.kvn.jobopportunityapp.ui.theme.GradientEnd))).statusBarsPadding(), contentAlignment = Alignment.CenterStart) {
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Start) {
-                    IconButton(onClick = onBackClick, modifier = Modifier.size(44.dp)) { Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Atrás", tint = Color.White) }
+            IconButton(onClick = onBackClick, modifier = Modifier.size(44.dp)) { Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = MaterialTheme.colorScheme.onPrimary) }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Ajustes", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
+            Text(text = "Ajustes", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
 
-            var showDeleteConfirm by remember { mutableStateOf(false) }
+            var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
             LazyColumn(modifier = Modifier
                 .fillMaxSize()
@@ -73,7 +67,7 @@ fun SettingsScreen(appPreferences: AppPreferences, onBackClick: () -> Unit = {},
                 item { NotificationsSection(appPreferences) }
                 item { DataSection(appPreferences) }
                 item { LanguageSection(appPreferences) }
-                item { AccountSection(onDelete = { showDeleteConfirm = true }, onLogout = { onLogout() }) }
+                item { AccountSection(onDelete = { showDeleteConfirm = true }, onLogout = onLogout) }
                 item { Spacer(modifier = Modifier.height(28.dp)) }
             }
 
@@ -100,6 +94,14 @@ private fun AppearanceSection(appPreferences: AppPreferences) {
             checked = appPreferences.isDarkTheme,
             onCheckedChange = { appPreferences.updateDarkTheme(it) }
         )
+        HorizontalDivider(color = BorderColor)
+        SettingsSwitchItem(
+            title = "Modo Demo",
+            subtitle = "Poblar la app con más datos de ejemplo",
+            icon = Icons.Default.Info,
+            checked = appPreferences.demoMode,
+            onCheckedChange = { appPreferences.updateDemoMode(it) }
+        )
     }
 }
 
@@ -119,7 +121,7 @@ private fun NotificationsSection(appPreferences: AppPreferences) {
 
 @Composable
 private fun DataSection(appPreferences: AppPreferences) {
-    var showDataDialog by remember { mutableStateOf(false) }
+    var showDataDialog by rememberSaveable { mutableStateOf(false) }
     SettingsSection(title = "Datos y Sincronización") {
         SettingsSwitchItem(
             title = "Sincronización Automática",
@@ -128,7 +130,7 @@ private fun DataSection(appPreferences: AppPreferences) {
             checked = appPreferences.autoSync,
             onCheckedChange = { appPreferences.updateAutoSync(it) }
         )
-    HorizontalDivider(color = BorderColor)
+    SettingsDivider()
         SettingsClickableItem(
             title = "Uso de Datos",
             subtitle = DataUsageOption.values().find { it.key == appPreferences.dataUsage }?.displayName ?: "Solo WiFi",
@@ -148,7 +150,7 @@ private fun DataSection(appPreferences: AppPreferences) {
 
 @Composable
 private fun LanguageSection(appPreferences: AppPreferences) {
-    var showLanguageDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by rememberSaveable { mutableStateOf(false) }
     SettingsSection(title = "Idioma y Región") {
         SettingsClickableItem(
             title = "Idioma",
@@ -176,34 +178,34 @@ private fun AccountSection(onDelete: () -> Unit = {}, onLogout: () -> Unit = {})
             icon = Icons.Default.Security,
             onClick = { }
         )
-    HorizontalDivider(color = BorderColor)
+    SettingsDivider()
         SettingsClickableItem(
             title = "Ayuda y Soporte",
             subtitle = "Obtener ayuda y contactar soporte",
-            icon = Icons.Default.Help,
+            icon = Icons.AutoMirrored.Filled.Help,
             onClick = { }
         )
-    HorizontalDivider(color = BorderColor)
+    SettingsDivider()
         SettingsClickableItem(
             title = "Acerca de",
             subtitle = "Información de la aplicación",
             icon = Icons.Default.Info,
             onClick = { }
         )
-    HorizontalDivider(color = BorderColor)
+    SettingsDivider()
         SettingsClickableItem(
             title = "Eliminar cuenta",
             subtitle = "Eliminar permanentemente tu cuenta",
-            icon = Icons.Default.DataUsage, // temporary icon
+            icon = Icons.Default.Delete,
             onClick = { onDelete() },
             isDestructive = true
         )
-    HorizontalDivider(color = BorderColor)
+    SettingsDivider()
         SettingsClickableItem(
             title = "Cerrar Sesión",
             subtitle = "Salir de tu cuenta",
-            icon = Icons.Default.Logout,
-            onClick = { },
+            icon = Icons.AutoMirrored.Filled.Logout,
+            onClick = onLogout,
             isDestructive = true
         )
     }
@@ -303,8 +305,13 @@ private fun SettingsClickableItem(
             Spacer(modifier = Modifier.height(4.dp))
             Text(subtitle, style = MaterialTheme.typography.bodySmall, color = subtitleColor)
         }
-        Icon(Icons.Default.ChevronRight, contentDescription = "Ir", tint = chevronTint)
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = chevronTint)
     }
+}
+
+@Composable
+private fun SettingsDivider() {
+    HorizontalDivider(color = BorderColor)
 }
 
 @Composable

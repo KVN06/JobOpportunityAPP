@@ -23,6 +23,10 @@ class AppPreferences(context: Context) {
     var autoSync by mutableStateOf(prefs.getBoolean("auto_sync", true))
     var dataUsage by mutableStateOf(prefs.getString("data_usage", "wifi_only") ?: "wifi_only")
     var language by mutableStateOf(prefs.getString("language", "es") ?: "es")
+    // Perfil
+    var avatarUri by mutableStateOf(prefs.getString("avatar_uri", "") ?: "")
+    // Demo mode
+    var demoMode by mutableStateOf(prefs.getBoolean("demo_mode", false))
     
     // Estados de autenticación
     var isLoggedIn by mutableStateOf(prefs.getBoolean("is_logged_in", false))
@@ -35,6 +39,8 @@ class AppPreferences(context: Context) {
     )
     var userEmail by mutableStateOf(prefs.getString("user_email", "") ?: "")
     var userName by mutableStateOf(prefs.getString("user_name", "") ?: "")
+    // Token de autenticación
+    var authToken: String? = prefs.getString("auth_token", null)
     
     // Métodos para manejar la autenticación
     fun saveUserSession(userType: UserType, email: String, name: String) {
@@ -50,18 +56,25 @@ class AppPreferences(context: Context) {
             .putString("user_name", name)
             .apply()
     }
+
+    fun saveAuthToken(token: String) {
+        authToken = token
+        prefs.edit().putString("auth_token", token).apply()
+    }
     
     fun clearUserSession() {
         isLoggedIn = false
         this.userType = UserType.CESANTE
         this.userEmail = ""
         this.userName = ""
+        authToken = null
         
         prefs.edit()
             .putBoolean("is_logged_in", false)
             .putString("user_type", UserType.CESANTE.name)
             .putString("user_email", "")
             .putString("user_name", "")
+            .remove("auth_token")
             .apply()
     }
     
@@ -109,6 +122,16 @@ class AppPreferences(context: Context) {
     fun updateLanguage(lang: String) {
         language = lang
         prefs.edit().putString("language", lang).apply()
+    }
+
+    fun updateAvatarUri(uri: String?) {
+        avatarUri = uri ?: ""
+        prefs.edit().putString("avatar_uri", avatarUri).apply()
+    }
+
+    fun updateDemoMode(enabled: Boolean) {
+        demoMode = enabled
+        prefs.edit().putBoolean("demo_mode", enabled).apply()
     }
 }
 

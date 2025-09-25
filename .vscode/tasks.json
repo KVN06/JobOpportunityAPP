@@ -4,13 +4,192 @@
 		{
 			"label": "Run Job Opportunity App",
 			"type": "shell",
-			"command": "gradlew",
+			"command": "${workspaceFolder}\\gradlew.bat",
 			"args": [
 				"installDebug"
 			],
 			"group": "build",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"group": "build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug",
+				"-x",
+				"lintVitalAnalyzeRelease"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug",
+				"--no-daemon",
+				"--build-cache",
+				"--stacktrace"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Install Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"installDebug"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$gradle"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Assemble Job Opportunity App (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"assembleDebug",
+				"--no-configuration-cache"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$gradle"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Clean and Assemble (Debug)",
+			"type": "shell",
+			"command": "${workspaceFolder}\\gradlew.bat",
+			"args": [
+				"clean",
+				"assembleDebug",
+				"--no-configuration-cache"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$gradle"
+			],
+			"group": "build"
 		}
 	]
 }

@@ -3,9 +3,9 @@ package com.kvn.jobopportunityapp.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,11 +22,7 @@ fun HistoryScreen(onBack: () -> Unit, sharedProgress: Float = 1f) {
             .background(Color.White)
             .padding(12.dp)) {
             Spacer(modifier = Modifier.height(12.dp))
-            Card(modifier = Modifier.fillMaxWidth().padding(8.dp), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "Aquí podrás ver tu historial de postulaciones y acciones (placeholder)")
-                }
-            }
+            Text("Historial no disponible. Integraremos API cuando esté lista.")
         }
     }
 }

@@ -18,26 +18,26 @@ fun ProfileActionsStub(modifier: Modifier = Modifier) {}
 fun ProfileStatItemStub(
 	title: String,
 	value: String,
+	modifier: Modifier = Modifier,
 	icon: ImageVector? = null,
-	color: Color = Color.Unspecified,
-	modifier: Modifier = Modifier
+	color: Color = Color.Unspecified
 ) {}
 
 @Composable
 fun ProfileActionCardStub(
 	title: String,
+	modifier: Modifier = Modifier,
 	icon: ImageVector? = null,
 	color: Color = Color.Unspecified,
-	onClick: () -> Unit = {},
-	modifier: Modifier = Modifier
+	onClick: () -> Unit = {}
 ) {}
 
 @Composable
 fun SettingsItemStub(
 	title: String,
+	modifier: Modifier = Modifier,
 	subtitle: String? = null,
 	icon: ImageVector? = null,
 	onClick: () -> Unit = {},
-	isDestructive: Boolean = false,
-	modifier: Modifier = Modifier
+	isDestructive: Boolean = false
 ) {}

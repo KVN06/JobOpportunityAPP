@@ -1,475 +1,191 @@
 package com.kvn.jobopportunityapp.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.kvn.jobopportunityapp.ui.theme.*
-
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.tween
-import com.kvn.jobopportunityapp.ui.components.CourseInfoChip
+import com.kvn.jobopportunityapp.data.AppPreferences
+import com.kvn.jobopportunityapp.domain.model.TrainingPost
+import com.kvn.jobopportunityapp.ui.theme.Background
+import com.kvn.jobopportunityapp.ui.theme.CardBackground
+import com.kvn.jobopportunityapp.ui.theme.Error
+import com.kvn.jobopportunityapp.ui.theme.Primary
+import com.kvn.jobopportunityapp.ui.theme.TextPrimary
+import com.kvn.jobopportunityapp.ui.theme.TextSecondary
+import com.kvn.jobopportunityapp.ui.viewmodel.TrainingsRemoteViewModel
 
 @Composable
 fun TrainingScreen() {
+    val context = LocalContext.current
+    val prefs = remember { AppPreferences(context) }
+    val vm = remember { TrainingsRemoteViewModel(prefs) }
 
-    var selectedCategory by remember { mutableIntStateOf(0) }
-    val visible = remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible.value = true }
-    AnimatedVisibility(
-        visible = visible.value,
-        enter = fadeIn(animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)) +
-                slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(350, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-                ),
-        exit = fadeOut(animationSpec = tween(200)) +
-                slideOutVertically(
-                    targetOffsetY = { it / 2 },
-                    animationSpec = tween(200)
-                )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Background)
-                .padding(horizontal = 20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Capacitaciones",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = TextPrimary
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            TrainingCategoryTabs(
-                selectedCategory = selectedCategory,
-                onCategorySelected = { selectedCategory = it }
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            when (selectedCategory) {
-                0 -> PopularCourses()
-                1 -> TechCourses()
-                2 -> BusinessCourses()
-                3 -> DesignCourses()
-            }
-        }
-    }
-}
+    val items by vm.items.collectAsState()
+    val loading by vm.loading.collectAsState()
+    val error by vm.error.collectAsState()
 
-@Composable
-fun TrainingCategoryTabs(
-    selectedCategory: Int,
-    onCategorySelected: (Int) -> Unit
-) {
-    val categories = listOf("Populares", "Tecnología", "Negocios", "Diseño")
-    
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        categories.forEachIndexed { index, category ->
-            TrainingCategoryTab(
-                text = category,
-                isSelected = selectedCategory == index,
-                onClick = { onCategorySelected(index) }
-            )
-        }
-    }
-}
-@Composable
-fun TrainingCategoryTab(text: String, isSelected: Boolean, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.clip(RoundedCornerShape(20.dp)),
-        color = if (isSelected) Primary else SurfaceVariant,
-        onClick = onClick
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
-            ),
-            color = if (isSelected) Color.White else TextSecondary
-        )
-    }
-}
-@Composable
-fun PopularCourses() {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(6) { index ->
-            val courses = listOf(
-                CourseItem(
-                    title = "Android Development con Kotlin",
-                    instructor = "Universidad del Cauca - Popayán",
-                    duration = "40 horas",
-                    level = "Intermedio",
-                    rating = 4.8f,
-                    price = "GRATIS",
-                    icon = Icons.Default.Android,
-                    color = TextPrimary
-                ),
-                CourseItem(
-                    title = "UX/UI Design Fundamentals",
-                    instructor = "SENA Popayán",
-                    duration = "30 horas",
-                    level = "Principiante",
-                    rating = 4.7f,
-                    price = "GRATIS",
-                    icon = Icons.Default.Brush,
-                    color = Secondary
-                ),
-                CourseItem(
-                    title = "Data Science con Python",
-                    instructor = "Tech Institute",
-                    duration = "60 horas",
-                    level = "Intermedio",
-                    rating = 4.9f,
-                    price = "$95.000",
-                    icon = Icons.Default.Analytics,
-                    color = Primary
-                ),
-                CourseItem(
-                    title = "Marketing Digital",
-                    instructor = "Business School",
-                    duration = "25 horas",
-                    level = "Principiante",
-                    rating = 4.6f,
-                    price = "$65.000",
-                    icon = Icons.Default.TrendingUp,
-                    color = Secondary
-                ),
-                CourseItem(
-                    title = "JavaScript Full Stack",
-                    instructor = "Code Academy",
-                    duration = "80 horas",
-                    level = "Avanzado",
-                    rating = 4.8f,
-                    price = "$120.000",
-                    icon = Icons.Default.Code,
-                    color = Secondary
-                ),
-                CourseItem(
-                    title = "Project Management",
-                    instructor = "MBA Online",
-                    duration = "35 horas",
-                    level = "Intermedio",
-                    rating = 4.5f,
-                    price = "$75.000",
-                    icon = Icons.Default.Assignment,
-                    color = PrimaryVariant
-                )
-            )
-            CourseCard(courses[index])
-        }
-        item { Spacer(modifier = Modifier.height(16.dp)) }
-    }
-}
+    LaunchedEffect(Unit) { vm.load() }
 
-@Composable
-fun TechCourses() {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(5) { index ->
-            val techCourses = listOf(
-                CourseItem(
-                    title = "Machine Learning Avanzado",
-                    instructor = "AI Institute",
-                    duration = "70 horas",
-                    level = "Avanzado",
-                    rating = 4.9f,
-                    price = "$150.000",
-                    icon = Icons.Default.Psychology,
-                    color = Primary
-                ),
-                CourseItem(
-                    title = "Cloud Computing AWS",
-                    instructor = "Amazon Web Services",
-                    duration = "45 horas",
-                    level = "Intermedio",
-                    rating = 4.7f,
-                    price = "$110.000",
-                    icon = Icons.Default.Cloud,
-                    color = Secondary
-                ),
-                CourseItem(
-                    title = "Cybersecurity Essentials",
-                    instructor = "Security Pro",
-                    duration = "35 horas",
-                    level = "Principiante",
-                    rating = 4.6f,
-                    price = "$85.000",
-                    icon = Icons.Default.Security,
-                    color = TextPrimary
-                ),
-                CourseItem(
-                    title = "Blockchain Development",
-                    instructor = "Crypto Academy",
-                    duration = "50 horas",
-                    level = "Avanzado",
-                    rating = 4.5f,
-                    price = "$130.000",
-                    icon = Icons.Default.AccountBalanceWallet,
-                    color = PrimaryVariant
-                ),
-                CourseItem(
-                    title = "DevOps Fundamentals",
-                    instructor = "Tech Ops",
-                    duration = "40 horas",
-                    level = "Intermedio",
-                    rating = 4.8f,
-                    price = "$98.000",
-                    icon = Icons.Default.DeveloperMode,
-                    color = Secondary
-                )
-            )
-            CourseCard(techCourses[index])
-        }
-    }
-}
-
-@Composable
-fun BusinessCourses() {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(4) { index ->
-            val businessCourses = listOf(
-                CourseItem(
-                    title = "Liderazgo Empresarial",
-                    instructor = "Leadership Academy",
-                    duration = "30 horas",
-                    level = "Intermedio",
-                    rating = 4.7f,
-                    price = "$70.000",
-                    icon = Icons.Default.Groups,
-                    color = Primary
-                ),
-                CourseItem(
-                    title = "Finanzas Corporativas",
-                    instructor = "Finance Institute",
-                    duration = "40 horas",
-                    level = "Avanzado",
-                    rating = 4.6f,
-                    price = "$90.000",
-                    icon = Icons.Default.AccountBalance,
-                    color = TextPrimary
-                ),
-                CourseItem(
-                    title = "Estrategia de Negocios",
-                    instructor = "Business Pro",
-                    duration = "25 horas",
-                    level = "Intermedio",
-                    rating = 4.8f,
-                    price = "$65.000",
-                    icon = Icons.Default.BusinessCenter,
-                    color = Secondary
-                ),
-                CourseItem(
-                    title = "Recursos Humanos",
-                    instructor = "HR Academy",
-                    duration = "35 horas",
-                    level = "Principiante",
-                    rating = 4.5f,
-                    price = "$55.000",
-                    icon = Icons.Default.People,
-                    color = Secondary
-                )
-            )
-            CourseCard(businessCourses[index])
-        }
-    }
-}
-
-@Composable
-fun DesignCourses() {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(4) { index ->
-            val designCourses = listOf(
-                CourseItem(
-                    title = "Adobe Creative Suite",
-                    instructor = "Adobe Certified",
-                    duration = "50 horas",
-                    level = "Intermedio",
-                    rating = 4.8f,
-                    price = "$105.000",
-                    icon = Icons.Default.Palette,
-                    color = PrimaryVariant
-                ),
-                CourseItem(
-                    title = "Fotografía Digital",
-                    instructor = "Photo Masters",
-                    duration = "30 horas",
-                    level = "Principiante",
-                    rating = 4.7f,
-                    price = "$60.000",
-                    icon = Icons.Default.CameraAlt,
-                    color = Primary
-                ),
-                CourseItem(
-                    title = "Motion Graphics",
-                    instructor = "Animation Studio",
-                    duration = "45 horas",
-                    level = "Avanzado",
-                    rating = 4.6f,
-                    price = "$115.000",
-                    icon = Icons.Default.Movie,
-                    color = Secondary
-                ),
-                CourseItem(
-                    title = "Web Design Responsive",
-                    instructor = "Web Academy",
-                    duration = "35 horas",
-                    level = "Intermedio",
-                    rating = 4.9f,
-                    price = "$80.000",
-                    icon = Icons.Default.WebAsset,
-                    color = TextPrimary
-                )
-            )
-            CourseCard(designCourses[index])
-        }
-    }
-}
-
-@Composable
-fun CourseCard(course: CourseItem) {
-    Card(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .fillMaxSize()
+            .background(Background)
+            .padding(horizontal = 20.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Capacitaciones",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when {
+            loading -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Primary)
+            }
+            error != null -> Text("Error: $error", color = Error)
+            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(items) { t ->
+                    TrainingCard(post = t)
+                }
+                item { Spacer(Modifier.height(12.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrainingCard(post: TrainingPost) {
+    val context = LocalContext.current
+    val dateRange = listOf(post.startDate, post.endDate).filter { it.isNotBlank() }.joinToString(" - ")
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                    color = Color(0xFFEFF6FF)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(course.color.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        course.icon?.let {
-                            Icon(
-                                imageVector = it,
-                                contentDescription = course.title,
-                                tint = course.color,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    }
-                    
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = course.title,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = TextPrimary,
-                            maxLines = 2
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = course.instructor,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Primary,
-                            maxLines = 1
-                        )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.School, contentDescription = null, tint = Primary)
                     }
                 }
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
+                Spacer(Modifier.size(12.dp))
                 Text(
-                    text = course.price,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    text = post.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = TextPrimary,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                CourseInfoChip(Icons.Default.Schedule, course.duration)
-                CourseInfoChip(Icons.Default.BarChart, course.level)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Rating",
-                        tint = Warning,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = course.rating.toString(),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                        ),
-                        color = TextPrimary
-                    )
+                if (post.link.isNotBlank()) {
+                    IconButton(onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.link))
+                        context.startActivity(intent)
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Abrir enlace", tint = Primary)
+                    }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary
-                )
-            ) {
+
+            if (post.provider.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(text = post.provider, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (dateRange.isNotBlank()) {
+                    InfoChip(icon = Icons.Filled.Event, text = dateRange)
+                }
+                if (post.link.isNotBlank()) {
+                    InfoChip(icon = Icons.Filled.Link, text = "Abrir", onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(post.link))
+                        context.startActivity(intent)
+                    })
+                }
+            }
+
+            if (post.description.isNotBlank()) {
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "Inscribirse",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = Color.White
+                    text = post.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
     }
 }
+
+@Composable
+private fun InfoChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    onClick: (() -> Unit)? = null
+) {
+    Surface(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        shape = RoundedCornerShape(10.dp),
+        color = Color(0xFFF3F4F6)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = TextSecondary)
+            Text(text = text, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        }
+    }
+}
+
 

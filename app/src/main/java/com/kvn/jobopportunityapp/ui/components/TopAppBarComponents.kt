@@ -11,21 +11,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kvn.jobopportunityapp.ui.theme.*
 import androidx.compose.ui.unit.lerp
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import com.kvn.jobopportunityapp.ui.viewmodel.SharedUserViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobOpportunityTopBar(
     onProfileClick: () -> Unit,
-    sharedProgress: Float = 0f // 0f = default, 1f = minimized/header-overlay
+    sharedProgress: Float = 0f, // 0f = default, 1f = minimized/header-overlay
+    sharedUserViewModel: SharedUserViewModel = viewModel(),
+    initialAvatarUri: String? = null
 ) {
     androidx.compose.animation.AnimatedVisibility(
         visible = true,
@@ -91,6 +100,7 @@ fun JobOpportunityTopBar(
             }
             
             // Foto de perfil circular, con recorte y borde definido
+            val avatarUri by sharedUserViewModel.avatarUri.collectAsState(initial = initialAvatarUri)
             Box(
                 modifier = Modifier
                     .size(46.dp)
@@ -107,12 +117,23 @@ fun JobOpportunityTopBar(
                     .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (!avatarUri.isNullOrBlank()) {
+                    AsyncImage(
+                        model = avatarUri,
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Perfil",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

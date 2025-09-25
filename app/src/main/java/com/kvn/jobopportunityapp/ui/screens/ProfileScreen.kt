@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Intent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -24,8 +25,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +60,10 @@ import androidx.compose.ui.window.Dialog
 import com.kvn.jobopportunityapp.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 
 /**
  * Clean ProfileScreen: gradient header, overlapping avatar (editable), persisted avatar, centered menu,
@@ -70,6 +81,9 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     val prefs: SharedPreferences = context.getSharedPreferences("job_opportunity_prefs", Context.MODE_PRIVATE)
+    val appPreferences = remember { com.kvn.jobopportunityapp.data.AppPreferences(context) }
+    // Shared VM to broadcast avatar changes
+    val sharedUserViewModel: com.kvn.jobopportunityapp.ui.viewmodel.SharedUserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
     // persisted user info
     var userName by remember { mutableStateOf(prefs.getString("user_name", "Vibefks Tech") ?: "Vibefks Tech") }
@@ -81,12 +95,20 @@ fun ProfileScreen(
     var avatarBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var userPickedAvatar by remember { mutableStateOf(false) }
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    // cropper state (declare before usage in imagePicker)
+    var showCropper by remember { mutableStateOf(false) }
+    var pendingCropUri by remember { mutableStateOf<String?>(null) }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
+            // Persist read permission so the URI works after app restarts
+            try {
+                context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Throwable) { /* ignore if already granted */ }
             val s = it.toString()
-            userPickedAvatar = true
-            prefs.edit().putString("avatar_uri", s).apply()
-            avatarUri = s
+            // Open cropper before persisting so user can adjust like WhatsApp
+            pendingCropUri = s
+            showCropper = true
         }
     }
 
@@ -145,10 +167,8 @@ fun ProfileScreen(
     // keep the small avatar large enough so the edit badge (pencil) remains visible
     val smallAvatarSize = 100.dp
 
-    val scrolled = remember { mutableStateOf(false) }
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
-        // be more responsive: any scroll should trigger the header state so vertical lift occurs
-        scrolled.value = listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+    val scrolled by remember(listState) {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 }
     }
 
         // outer ring extra radius used for safe paddings
@@ -160,18 +180,22 @@ fun ProfileScreen(
     // maximum scroll (pixels) to reach full effect; increase to reduce movement sensitivity
     val maxScrollForEffectPx = with(density) { 150.dp.toPx() }
 
-        // Use derivedStateOf with explicit types to help the compiler infer correctly
-        val currentScrollPx = derivedStateOf<Float> {
-            if (listState.firstVisibleItemIndex > 0) maxScrollForEffectPx
-            else listState.firstVisibleItemScrollOffset.toFloat().coerceAtLeast(0f)
+        // Use derivedStateOf with remember to avoid creating state during composition
+        val currentScrollPx by remember(listState, maxScrollForEffectPx) {
+            derivedStateOf {
+                if (listState.firstVisibleItemIndex > 0) maxScrollForEffectPx
+                else listState.firstVisibleItemScrollOffset.toFloat().coerceAtLeast(0f)
+            }
         }
 
-        val rawFraction = derivedStateOf {
-            (currentScrollPx.value / maxScrollForEffectPx).coerceIn(0f, 1f)
+        val rawFraction by remember(currentScrollPx, maxScrollForEffectPx) {
+            derivedStateOf {
+                (currentScrollPx / maxScrollForEffectPx).coerceIn(0f, 1f)
+            }
         }
 
     // Use raw fraction driven by scroll (0..1)
-    val animFraction = rawFraction.value
+    val animFraction = rawFraction
 
     // animate a single fraction with a spring to drive both scale and Y movement
     val animatedFraction by animateFloatAsState(
@@ -208,6 +232,10 @@ fun ProfileScreen(
         // small delay to let the initial composition/layout settle
         delay(300L)
         loadAvatarDelayed = true
+        // Push current persisted avatar to shared VM so top bar shows it
+    // sync from preferences/AppPreferences in case of previous value
+    val persisted = appPreferences.avatarUri.ifBlank { avatarUri }
+    sharedUserViewModel.setAvatarUri(persisted)
     }
 
     // we still keep avatarBitmap only for potential fallbacks; decode off the IO dispatcher
@@ -265,7 +293,7 @@ fun ProfileScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                            StatBlock(icon = Icons.Default.Assignment, label = "Postulaciones", value = "6")
+                            StatBlock(icon = Icons.AutoMirrored.Filled.Assignment, label = "Postulaciones", value = "6")
                             Spacer(modifier = Modifier.width(8.dp))
                             StatBlock(icon = Icons.Default.Event, label = "Entrevistas", value = "2")
                             Spacer(modifier = Modifier.width(8.dp))
@@ -429,7 +457,7 @@ fun ProfileScreen(
                         // Full-width rectangular logout action styled as a card-like button
                         Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { showLogoutConfirm = true }, colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)), elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)) {
                             Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(imageVector = Icons.Default.Logout, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(22.dp))
+                                Icon(imageVector = Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color(0xFFD32F2F), modifier = Modifier.size(22.dp))
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(text = "Cerrar sesión", color = Color(0xFFD32F2F), style = MaterialTheme.typography.titleMedium)
@@ -452,7 +480,7 @@ fun ProfileScreen(
                 // back button with subtle background for contrast
                 Surface(shape = CircleShape, color = Color.Black.copy(alpha = 0.12f), modifier = Modifier.size(44.dp)) {
                     IconButton(onClick = { onBackClick() }, modifier = Modifier.size(44.dp)) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Atrás", tint = Color.White, modifier = Modifier.size(22.dp))
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White, modifier = Modifier.size(22.dp))
                     }
                 }
 
@@ -462,7 +490,7 @@ fun ProfileScreen(
                         // slightly larger title so header reads stronger
                         Text(text = "Job Opportunity", color = Color.White, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                         // Instant name+role alpha (no animation) to avoid costly animations
-                        val nameAlpha = if (scrolled.value) 1f else 0f
+                        val nameAlpha = if (scrolled) 1f else 0f
                         // show "Nombre | Rol" in the header when scrolled; truncate if too long
                         Text(
                             text = "$userName | $userRole",
@@ -511,7 +539,7 @@ fun ProfileScreen(
                 modifier = Modifier
                     .size(avatarSizeAnimated)
                     .clip(CircleShape)
-                    .clickable { imagePicker.launch("image/*") },
+                    .clickable { imagePicker.launch(arrayOf("image/*")) },
                 shape = CircleShape,
                 color = Color.Transparent,
                 shadowElevation = 8.dp
@@ -583,7 +611,7 @@ fun ProfileScreen(
             }
 
             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }, offset = DpOffset(x = (-8).dp, y = 12.dp)) {
-                DropdownMenuItem(text = { Text("Cambiar foto") }, leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }, onClick = { showMenu = false; imagePicker.launch("image/*") })
+                DropdownMenuItem(text = { Text("Cambiar foto") }, leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }, onClick = { showMenu = false; imagePicker.launch(arrayOf("image/*")) })
 
                 if (avatarUri != null) {
                     DropdownMenuItem(text = { Text("Eliminar foto") }, leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Error) }, onClick = { showMenu = false; showDeleteConfirm = true })
@@ -632,7 +660,7 @@ fun ProfileScreen(
                                 failedUri?.let { prefs.edit().remove("avatar_uri").apply() }
                                 avatarUri = null; showSecurityDialog = false
                             }) { Text("Eliminar referencia") }
-                            TextButton(modifier = Modifier.fillMaxWidth(), onClick = { showSecurityDialog = false; imagePicker.launch("image/*") }) { Text("Reintentar") }
+                            TextButton(modifier = Modifier.fillMaxWidth(), onClick = { showSecurityDialog = false; imagePicker.launch(arrayOf("image/*")) }) { Text("Reintentar") }
                             TextButton(modifier = Modifier.fillMaxWidth(), onClick = { showSecurityDialog = false }) { Text("Cerrar") }
                         }
                     }
@@ -695,6 +723,25 @@ fun ProfileScreen(
             }
         }
     }
+
+    // Simple crop/adjust dialog: circle preview with zoom and offset; saves cropped bitmap
+    if (showCropper && pendingCropUri != null) {
+        CropAvatarDialog(
+            imageUri = pendingCropUri!!,
+            onDismiss = { showCropper = false; pendingCropUri = null },
+            onSave = { cropped ->
+                // Save to cache and persist URI
+                val uri = saveBitmapToCache(context, cropped)
+                prefs.edit().putString("avatar_uri", uri.toString()).apply()
+                appPreferences.updateAvatarUri(uri.toString())
+                avatarUri = uri.toString()
+                // notify header
+                sharedUserViewModel.setAvatarUri(uri.toString())
+                showCropper = false
+                pendingCropUri = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -708,6 +755,188 @@ fun SectionCard(title: String, subtitle: String, onEdit: () -> Unit) {
             }
 
             TextButton(onClick = onEdit) { Text(text = "Editar") }
+        }
+    }
+}
+
+// Util: save bitmap to app cache and return content Uri via FileProvider-less approach using MediaStore for API 29+, or cache file Uri fallback
+private fun saveBitmapToCache(context: Context, bitmap: Bitmap): Uri {
+    return try {
+        // Prefer MediaStore on Android Q+
+        val resolver = context.contentResolver
+        val contentValues = android.content.ContentValues().apply {
+            put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "avatar_${System.currentTimeMillis()}.png")
+            put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png")
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/JobOpportunity")
+                put(android.provider.MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+        val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        if (uri != null) {
+            resolver.openOutputStream(uri)?.use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                contentValues.clear()
+                contentValues.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, contentValues, null, null)
+            }
+            uri
+        } else {
+            // Fallback to cache
+            val file = java.io.File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")
+            java.io.FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+            Uri.fromFile(file)
+        }
+    } catch (_: Throwable) {
+        // absolute fallback: cache
+        val file = java.io.File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")
+        java.io.FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        Uri.fromFile(file)
+    }
+}
+
+@Composable
+private fun CropAvatarDialog(imageUri: String, onDismiss: () -> Unit, onSave: (Bitmap) -> Unit) {
+    val context = LocalContext.current
+    var zoom by remember { mutableFloatStateOf(1f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+
+    // Load the bitmap at a reasonable size to avoid OOM
+    var srcBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(imageUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                context.contentResolver.openInputStream(Uri.parse(imageUri))?.use { stream ->
+                    val decoded = BitmapFactory.decodeStream(stream)
+                    // Limit max dimension to ~2048px to avoid huge memory
+                    val maxDim = 2048
+                    val w = decoded.width
+                    val h = decoded.height
+                    val scale = maxOf(1f, maxOf(w, h) / maxDim.toFloat())
+                    val resized = if (scale > 1f) {
+                        Bitmap.createScaledBitmap(decoded, (w / scale).toInt(), (h / scale).toInt(), true)
+                    } else decoded
+                    srcBitmap = resized
+                }
+            } catch (_: Throwable) {
+                srcBitmap = null
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)) {
+            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Ajustar foto", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(12.dp))
+
+                val boxSize = 260.dp
+                val density = LocalDensity.current
+                // Tamaño en px de la caja de preview (círculo)
+                val boxPx = with(density) { boxSize.toPx() }
+                // Rango de pan permitido (depende del zoom actual). Evita dejar ver “huecos”.
+                fun maxPan(zoomVal: Float): Float = ((boxPx * (zoomVal - 1f)) / 2f).coerceAtLeast(0f)
+                // Asegura que los offsets estén siempre dentro del rango permitido con el zoom actual
+                fun clampOffsets() {
+                    val max = maxPan(zoom)
+                    offsetX = offsetX.coerceIn(-max, max)
+                    offsetY = offsetY.coerceIn(-max, max)
+                }
+                Box(
+                    modifier = Modifier.size(boxSize).clip(CircleShape).background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (srcBitmap != null) {
+                        // Preview with zoom/offset; we use AsyncImagePainter for URI, but here bitmap is fine
+                        Image(
+                            bitmap = srcBitmap!!.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .transformable(
+                                    state = rememberTransformableState { zoomChange, panChange, _ ->
+                                        // Actualiza zoom dentro de límites y re-clampa offsets
+                                        zoom = (zoom * zoomChange).coerceIn(1f, 4f)
+                                        val max = maxPan(zoom)
+                                        offsetX = (offsetX + panChange.x).coerceIn(-max, max)
+                                        offsetY = (offsetY + panChange.y).coerceIn(-max, max)
+                                    }
+                                )
+                                .graphicsLayer {
+                                    // Apply zoom and translation
+                                    scaleX = zoom
+                                    scaleY = zoom
+                                    translationX = offsetX
+                                    translationY = offsetY
+                                },
+                            // Dejamos Crop para el baseline (rellenar caja) y luego aplicamos zoom/pan por capa
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+                // Controls: simple sliders to mimic pinch/drag quickly
+                Text("Zoom (también puedes pellizcar la imagen)")
+                Slider(
+                    value = zoom,
+                    onValueChange = { newZ ->
+                        zoom = newZ.coerceIn(1f, 4f)
+                        clampOffsets()
+                    },
+                    valueRange = 1f..4f
+                )
+                Spacer(Modifier.height(8.dp))
+                Text("Horizontal")
+                run {
+                    val max = maxPan(zoom)
+                    Slider(value = offsetX, onValueChange = { offsetX = it.coerceIn(-max, max) }, valueRange = -max..max)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("Vertical")
+                run {
+                    val max = maxPan(zoom)
+                    Slider(value = offsetY, onValueChange = { offsetY = it.coerceIn(-max, max) }, valueRange = -max..max)
+                }
+
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onDismiss) { Text("Cancelar") }
+                    Button(onClick = {
+                        // Render cropped circle from current zoom/offset
+                        val src = srcBitmap ?: return@Button
+                        val outSize = 512 // output square size
+                        val output = Bitmap.createBitmap(outSize, outSize, Bitmap.Config.ARGB_8888)
+                        val canvas = android.graphics.Canvas(output)
+                        val paint = android.graphics.Paint().apply { isAntiAlias = true }
+
+                        // Draw circle clip
+                        val path = android.graphics.Path().apply {
+                            addCircle(outSize / 2f, outSize / 2f, outSize / 2f, android.graphics.Path.Direction.CW)
+                        }
+                        canvas.save()
+                        canvas.clipPath(path)
+
+                        // Compute source draw matrix based on zoom and offsets
+                        val matrix = android.graphics.Matrix()
+                        // Center-crop baseline
+                        val scale = maxOf(outSize.toFloat() / src.width, outSize.toFloat() / src.height) * zoom
+                        matrix.postScale(scale, scale)
+                        // Mapeo consistente de offsets del preview (boxPx) al bitmap final (outSize)
+                        val offsetScale = if (boxPx > 0f) outSize / boxPx else 1f
+                        val dx = (outSize - src.width * scale) / 2f + offsetX * offsetScale
+                        val dy = (outSize - src.height * scale) / 2f + offsetY * offsetScale
+                        matrix.postTranslate(dx, dy)
+
+                        canvas.drawBitmap(src, matrix, paint)
+                        canvas.restore()
+                        onSave(output)
+                    }) { Text("Guardar") }
+                }
+            }
         }
     }
 }
@@ -842,7 +1071,9 @@ fun SmallSection(title: String, count: Int, onEdit: () -> Unit, icon: ImageVecto
 
 @Composable
 fun EditListDialog(title: String, items: List<String>, onDismiss: () -> Unit, onSave: (List<String>) -> Unit) {
-    var list by remember { mutableStateOf(items.toMutableList()) }
+    val list = remember {
+        mutableStateListOf<String>().also { it.addAll(items) }
+    }
     var newItem by remember { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -892,7 +1123,7 @@ fun SettingsRow(icon: ImageVector, title: String, subtitle: String, onClick: () 
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
         }
 
-        Icon(imageVector = Icons.Default.KeyboardArrowRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+    Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
     }
 }
 
